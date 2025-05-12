@@ -18,19 +18,45 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
+# Dependencies
+# markdown:         redcarpet
+# highlighter:      pygments
+
+# Permalinks
+# permalink:        pretty
+# relative_permalinks: true
+
+# Setup
 title: 0xHasi
 email: lehasaseoe77@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   Exploring Offensive Security, Reverse Engineering & Malware Analysis.
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://lehasas.github.io/" # the base hostname & protocol for your site, e.g. http://example.com
-twitter_username: jekyllrb
-github_username:  jekyll
+url: https://lehasas.github.io # Your GitHub Pages site
+baseurl: "" # Keep empty unless using a subdirectory
+
+paginate:         5
+permalink:    /:title.html # <-- This is important for post URL structure
+
+author:
+  name:           'Lehasa Seoe'
+
+# Custom vars
+version:          1.0.0
+
+# Social media
+github:
+  repo:           https://github.com/lehasaS
+
+social:
+  linkedIn:       https://www.linkedin.com/in/lehasas/
 
 # Build settings
-theme: minima
+remote_theme: "poole/hyde"
 plugins:
   - jekyll-feed
+  - jekyll-remote-theme
+  - jekyll-paginate
+
 
 # Exclude from processing.
 # The following items will not be processed, by default.
