@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "ValleyRat Part 1: Static Analysis - From Go Loader to Decrypted Implant"
+title: "ValleyRAT (Part 1): Static Analysis - From Go Loader to Decrypted Implant"
 date: 2026-02-28
 categories:
   - malware-analysis
@@ -10,19 +10,19 @@ tags:
   - reverse-engineering
   - static-analysis
   - windows
-  - Go
+  - go
   - backdoor
   - loader
   - donut
-  - C2
-series: ValleyRat
+  - c2
+series: ValleyRAT
 series_part: 1
 series_total: 2
 ---
 
-This write-up documents my static analysis of the sample [*ValleyRAT*](https://malops.io/challenges/valleyrat) from MalOps. The goal was to understand what the binary does without leaning on dynamic analysis, packet capture or full behavioral emulation. Sticking to just enough triage, disassembly, and payload extraction to construct a narrative, whilst of course answering the questions posed in the challenge.
+This write-up documents my static analysis of the sample [*ValleyRAT*](https://malops.io/challenges/valleyrat) from MalOps. The goal was to understand what the binary does without leaning on dynamic analysis, packet capture, or full behavioral emulation. I stuck to triage, disassembly, and payload extraction to build a narrative while answering the challenge questions.
 
-I made notice that the sample utilised a binary protocol for its C2 commnucation, and so in this write-up I will not be looking into analysis of its protocol and network emulation here, I hope to cover this in a **Part 2**.
+I noticed that the sample used a binary protocol for C2 communication, so this write-up does not cover protocol analysis or network emulation. I will cover that in **Part 2**.
 
 > Safety note: all analysis was done in an isolated lab. Don't run unknown samples on a host you care about.
 
@@ -40,7 +40,7 @@ Opening the file we dumped the strings to, we then see a Go toolchain fingerprin
 
 ![Go compiler toolchain strings]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-string-analysis/2-toolchain-strings.png" | relative_url}})
 
-At this point my default "Go malware" mental model kicked in, minimal imports, and perhaps runtime API resolution.
+At this point, my default "Go malware" mental model kicked in: minimal imports and runtime API resolution.
 
 ### 1.2 High-level Capability Hypotheses from Strings
 
@@ -57,7 +57,7 @@ One string that stood out is:
 
 * `./loader.go`
 
-This is not yet proof by itself, but a strong smell, that this was probably built from a Go project that had an explicit loader component.
+This is not proof by itself, but it is a strong signal that this was built from a Go project with an explicit loader component.
 
 ### 1.3 Persistence Indicator
 
@@ -65,7 +65,7 @@ A very strong persistence indicator appeared directly:
 
 ![Registry run key]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-string-analysis/4-registry-run-persistance.png" | relative_url}})
 
-This is Run key[^1] persistence mechanism. This immediately becomes a working hypothesis:
+This indicates Run key persistence[^1], which immediately becomes a working hypothesis:
 > The sample persists by adding itself to the Run key.
 
 ### 1.4 Imports: Minimal Footprint
@@ -97,7 +97,7 @@ In Ghidra, following the PE entrypoint landed us in the standard Go startup (`ru
 
 ![Sample's Cutter Overview]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-disassembly/2-main-main.png" | relative_url}})
 
-So `main.main` is the actual behavioral start of this sample, not the raw entrypoint, interestingly we can see the previously mentioned string `./loader.go` that we noted earlier, pointing out that the address we are on now was at line 67 in the original Golang source!
+So `main.main` is the true behavioral start of this sample, not the raw entrypoint. We can also see the previously noted `./loader.go` string, which suggests this address maps to line 67 in the original Go source.
 
 ## 3. Stage 1/3 - Loader Logic: `main.main` Call Tree
 
@@ -111,7 +111,7 @@ This story was clearly evident when we look at the function call tree within the
 
 ![Main.main function call tree]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-disassembly/3-ghidra-main-main-call-tree.png" | relative_url}})
 
-We will walk through each of these stages implemeneted by the above functions to now verify our hypotheses.
+We will walk through each of these stages implemented by the functions above to verify the hypotheses.
 
 ### 3.1 Persistence: `enableAutoStart()`
 
@@ -193,7 +193,7 @@ There's also a staging/copy loop before the decrypt call. Effectively, the loade
 
 #### 3.2.3 Static Payload Extraction
 
-Given the information we have above, we can now extract the payload ourselves without the need for running the sample and extracting the payload in memory. We will do the extraction via the following script, utilising the information we gathered above.
+Given the information above, we can extract the payload without running the sample and dumping memory at runtime. The following script uses the recovered constants directly.
 
 ```python
 import pefile
@@ -207,7 +207,7 @@ PAYLOAD_SIZE = 0x25660                  # Size of payload
 AES_KEY      = b"1ws12uuu11j*p5fr"      # AES decryption key
 
 OUT_ENC = "payload.encrypted"
-OUT_DEC = "payload.deccrypted"
+OUT_DEC = "payload.decrypted"
 
 
 def va_to_file_offset(pe, va):
@@ -246,13 +246,13 @@ if __name__ == "__main__":
     main()
 ```
 
-Running the script successfuly extracted the payload from the sample, and then decrypted payload using the identified key.
+Running the script successfully extracted and decrypted the payload using the identified key.
 
 ![Payload Decryption and Extraction]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-payload-extraction/1-payload-extraction.png" | relative_url}})
 
 Running the `file` command on the extracted decrypted payload, we see that it can't find any recognizable header information to tell us what type of file this is. This will be our next task, to determine what this payload is.
 
-### 3.4 Payload Loading: In-Memory Execution via `kernel32`
+### 3.3 Payload Loading: In-Memory Execution via `kernel32`
 
 Immediately after decryption, the loader follows the classic sequence:
 
@@ -290,17 +290,17 @@ After extracting and decrypting the embedded payload, I loaded the resulting blo
 
 ![Payload Cutter Overview]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-payload-extraction/2-cutter-overview.png" | relative_url}})
 
-We see that the file format is not known as it does not start with a known executable container format, this correlates with the output of the `file` command. Regardless, there are a few interesting observations:
+The file format is unknown because it does not start with a recognizable executable container format, which correlates with the `file` command output. Regardless, a few observations stand out:
 
-* Bits - 64:
-Even without a recognized file format, Cutter can tried to make an architecture guess based on heuristics which I assume are things like instruction patterns, entropy, and/or typical prologues. It decided it should treat this blob as 64-bit code, which is consistent with what we later confirm via DIE.
+* **Bits: 64**
+Even without a recognized file format, Cutter can still infer architecture from heuristics (instruction patterns, entropy, and typical prologues). It identified this blob as 64-bit code, which is consistent with what we later confirm via DIE.
 
-* Base Addr - `0x00000000`:
+* **Base Addr: `0x00000000`**
 Normal PE binaries embed an ImageBase and relocation information. Shellcode does not. With “Format: N/A”, Cutter has no structural metadata to anchor the blob, so it maps it as a flat buffer and assigns a default base address.
 
 This is one of the first observations that hints to us that we might be dealing with shellcode, i.e. it’s not meant to be loaded by the Windows loader. It’s meant to be copied into memory and executed.
 
-* Mode - `r-x`:
+* **Mode: `r-x`**
 Cutter is indicating that it is treating this payload as executable code. Which aligns with a memory execution pipeline (`VirtualAlloc` -> `RtlMoveMemory` -> `CreateThread`).
 
 So, even though Cutter couldn’t classify it as a PE, its view is consistent with what the stage-0 Go loader does, which is to decrypt a blob, allocate memory, and then execute it.
@@ -319,7 +319,7 @@ mov eax, [0x30]
 
 #### 4.2.1 Why `mov eax, [0x30]`?
 
-I've seen this technique before, this tells us that the shellcode tries to reach the PEB (Process Environment Block) to possibly enumerate loaded modules (kernel32, ntdll, etc.) without relying on imports[^3].
+I have seen this technique before. It suggests the shellcode is trying to reach the PEB (Process Environment Block) to enumerate loaded modules (kernel32, ntdll, etc.) without relying on imports[^3].
 
 * On x86, shellcode commonly uses fs:[0x30] to get the PEB pointer.
 * On x64, the analogous approach uses gs:[0x60] for the PEB.
@@ -330,7 +330,7 @@ That detail matters.
 
 #### 4.2.2 Why `scdbg` Stopped: Wrong Execution Model
 
-Looking around the internet, I came to understand that `scdbg` is historically oriented around 32-bit shellcode emulation patterns[^4] and simplified Windows environment emulation. The payload we're dealing with is actually `AMD64` Donut shellcode, which expects:
+`scdbg` is historically oriented around 32-bit shellcode emulation patterns[^4] and simplified Windows environment emulation. The payload here is `AMD64` Donut shellcode, which expects:
 
 * A 64-bit execution context
 * Correct segment register usage (GS access for PEB style lookups)
@@ -374,7 +374,7 @@ So in this multi-stage chain:
 * Blob is Donut shellcode → whose job is to unpack/map an embedded PE
 * That embedded PE is the real implant (the part that actually “does things”)
 
-I came across a tool that can help us parse the shellcode, locate, decrypt, and extract the `DONUT_INSTANCE` structure embedded in the binary called [donut_decryptor](https://github.com/volexity/donut-decryptor). Installing it and running it against `payload.decrypted` we get:
+I used a tool called [donut_decryptor](https://github.com/volexity/donut-decryptor), which can parse the shellcode and extract the embedded `DONUT_INSTANCE` structure. Running it against `payload.decrypted` produced:
 
 ![Undonut the payload]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-payload-extraction/5-donut-undonut.png" | relative_url}})
 
@@ -382,19 +382,23 @@ The tool does find the `DONUT_INSTANCE` structure, and recovers the binary and w
 
 ![Undonut instance information]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-payload-extraction/6-donut-instance-info.png" | relative_url}})
 
-After "undonuting", we can see that the recovered artifact was a real PE:
+After "undonuting," we can see that the recovered artifact is a real PE:
 
 ![Undonut recovered PE]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-payload-extraction/7-donut-third-stage-payload.png" | relative_url}})
 
 That's the transition point where the Go loader stops being interesting and the native implant begins.
 
-## 5. Stage 3/3 - Donut Deobfuscate: Native x64 PE Implant
+## 5. Stage 3/3 - Deobfuscated Donut Payload: Native x64 PE Implant
 
-Once the Donut wrapper is peeled away, the recovered payload behaves like a conventional native Windows implant. It enters through the PE entrypoint, runs CRT startup, sets up process-local state, and then transitions into its “real” operational loop.
+Once the Donut wrapper is peeled away, the recovered payload behaves like a conventional native Windows implant. We again load it into cutter to get a general overview of it.
+
+![Undonut recovered PE]({{"/public/images/2026-02-15-valleyrat-part-1-static-analysis/valley-rat-payload-extraction/8-mod-payload-cutter.png" | relative_url}})
+
+Analysing it we observe that it enters through the PE entrypoint, runs CRT startup, sets up process-local state, and then transitions into its “real” operational loop.
 
 ### 5.1 CRT Startup and Heap Setup
 
-From the implant entrypoint, execution flows through the usual C/C++ runtime machinery (the CRT). 
+From the implant entrypoint, execution flows through the usual C/C++ runtime machinery (the CRT).
 
 ```c
                         entry 
@@ -404,12 +408,12 @@ From the implant entrypoint, execution flows through the usual C/C++ runtime mac
 140009a81 e9 76 fe        JMP        __tmainCRTStartup()
 ```
 
-That means it is preparing the process for “normal” Win32 programming. Initializing security cookies, setting up thread-local storage, initializing global constructors (if any), and establishing an allocator strategy.
+That means it is preparing the process for normal Win32 execution: initializing security cookies, setting up thread-local storage, initializing global constructors (if any), and establishing an allocator strategy.
 
 A detail that stood out is that the implant did not simply rely on the default process heap forever. Instead, early in initialization it created a **private heap** using:
 
-* `HeapCreate()` — Allocates a dedicated heap object owned by the process
-* `HeapAlloc()` — Uses that heap for subsequent allocations
+* `HeapCreate()` - allocates a dedicated heap object owned by the process
+* `HeapAlloc()` - uses that heap for subsequent allocations
 
 This was handled by a `_heap_init()` call:
 
@@ -418,7 +422,7 @@ This was handled by a `_heap_init()` call:
 140009954 e8 6f 05        CALL       _heap_init
 ```
 
-In the failure paths of the above operations (calls resembling `FUN_14000a30c(0x1c)` / `FUN_14000a30c(0x10)`), the behavior matches fail fast CRT-style enforcement. The implant checks critical init results (like heap handle creation). If the handle is null, it doesn’t continue, it aborts through an error routine. This can be considered the beginning stages of environment check, if something about the environment is wrong (emulation, restricted sandbox, incompatible runtime), it exits early and avoids noisy crashes later.
+In the failure paths of the above operations (calls resembling `FUN_14000a30c(0x1c)` / `FUN_14000a30c(0x10)`), the behavior matches fail-fast CRT-style enforcement. The implant checks critical initialization results (like heap handle creation). If the handle is null, it does not continue; it aborts through an error routine. This can be seen as early environment checking: if something about the environment is wrong (emulation, restricted sandbox, incompatible runtime), it exits early and avoids noisy crashes later.
 
 ### 5.2 Environment Check
 
@@ -430,7 +434,7 @@ Again, in `_heap_init()` the implant calls `GetVersion()`.
 140009ef0 ff 15 02        CALL       qword ptr [->KERNEL32.DLL::GetVersion]
 ```
 
-This was interpreted as it trying to determine "what kind of Windows am am I on?", it likely did this to signal for:
+This was interpreted as the implant asking, "what kind of Windows am I on?" It likely does this to support:
 
 * **Compatibility gates**: Avoid executing paths that rely on APIs not present on older systems.
 * **Behavior selection**: Different injection methods, persistence tactics, or system paths by version.
@@ -440,14 +444,14 @@ Given the rest of the implant’s behavior (threading, registry usage, dumping v
 
 ## 6. Anti-Analysis and Self-Process Dumping
 
-After initial setup, execution reaches `FUN_140008580`. This function is best understood as a **runtime staging hub**, it wires up crash/exception handling, performs stealthy UI behavior, and then kicks off the long-running worker thread that later drives C2 behavior. Specifically, this function does at least four distinct things:
+After initial setup, execution reaches `FUN_140008580`. This function is best understood as a **runtime staging hub**: it wires up crash/exception handling, performs stealthy UI behavior, and then kicks off the long-running worker thread that later drives C2 behavior. Specifically, this function does at least four distinct things:
 
 * Installs the unhandled exception filter
 * Hides the console window
 * Posts a thread message (likely to pump or unblock something UI/message related)
 * Spawns the worker thread (FUN_1400080e0) and waits on it
 
-The first important call here is `SetUnhandledExceptionFilter`, this registers `FUN_140008550` as the process-wide unhandled exception filter. So, if an exception occurs and nothing catches it, Windows will invoke this handler instead of immediately terminating the process with the default crash UI.
+The first important call here is `SetUnhandledExceptionFilter`. This registers `FUN_140008550` as the process-wide unhandled exception filter. If an exception occurs and nothing catches it, Windows will invoke this handler instead of immediately terminating the process with the default crash UI.
 
 ```c
                         FUN_140008580
@@ -455,7 +459,7 @@ The first important call here is `SetUnhandledExceptionFilter`, this registers `
 140008584 48 8d 0d        LEA        RCX,[FUN_140008550]
 14000858b ff 15 97        CALL       qword ptr [->KERNEL32.DLL::SetUnhandledExceptionFilter]
 ```
-Immediately afterward, the implant calls `GetConsoleWindow()` and then `ShowWindow(hWnd, 0)`. Passing 0 corresponds to `SW_HIDE`[^5], i.e., it hides its console window if one exists. This is because a console-compiled payload is far noisier if it leaves a window on the user’s desktop.
+Immediately afterward, the implant calls `GetConsoleWindow()` and then `ShowWindow(hWnd, 0)`. Passing `0` corresponds to `SW_HIDE`[^5], i.e., it hides its console window if one exists. A console-compiled payload is far noisier if it leaves a visible window on the user desktop.
 
 ```c
 140008591 ff 15 a9        CALL       qword ptr [->KERNEL32.DLL::GetConsoleWindow]
@@ -508,7 +512,7 @@ Two behaviors stand out immediately:
 * If a debugger is detected -> return early (skip the noisy part).
 * Otherwise -> proceed into a second branch that performs a dump routine (`FUN_140008370`).
 
-Note that as an unhandled exception filter, Windows will call this function with exception-context-like data. The hypotheses here is that the handler’s purpose is less about “handling” an exception and more about conditionally executing the dump logic.
+As an unhandled exception filter, Windows calls this function with exception-context-like data. The hypothesis here is that the handler’s purpose is less about "handling" an exception and more about conditionally executing the dump logic.
 
 The dump routine path includes:
 
@@ -539,13 +543,13 @@ The dump routine path includes:
 140008486 ff 15 bc        CALL       qword ptr [->KERNEL32.DLL::CreateFileW]
 ```
 
-That second branch was of interest, this is because creating a minidump of your own process seemed very deliberate, and it can capture sensitive runtime state. At this stage I considered a few plausible motivations:
+That second branch is especially interesting because creating a minidump of its own process appears deliberate and can capture sensitive runtime state. At this stage, I considered a few plausible motivations:
 
-* **Self Debugging:** Generate a dump that can be pulled later to debug failures on victim systems.
+* **Self-debugging:** Generate a dump that can be pulled later to debug failures on victim systems.
 * **Anti-analysis gating:** Only produce artifacts when not under a debugger (to avoid handing analysts decrypted state during interactive reversing).
 * **Noise injection / disruption**: Dumping can pollute disk with artifacts, trigger alerts, or waste analyst time depending on how it is used operationally.
 
-### 6.2. Analysing the Self-dump Flow (Exception-Triggered)
+### 6.2 Analysing the Self-dump Flow (Exception-Triggered)
 
 #### 6.2.1 Loading `DbgHelp.dll`
 
@@ -580,11 +584,11 @@ The key point is that this is not an OS-generated crash dump created by WerFault
 * Runtime-resolved function pointers and state,
 * Potentially keys/tokens/parameters used later in execution.
 
-That makes this behavior may help operators debug, but it can also leak the implant’s secrets to defenders if the dump is recovered.
+This behavior may help operators debug, but it can also leak the implant's secrets to defenders if the dump is recovered.
 
 #### 6.2.3 Dump Filename Format
 
-The filename is constructed using `GetLocalTime` + `wsprintfW` and with the timestamp format string:
+The filename is constructed using `GetLocalTime` and `wsprintfW`, with the timestamp format string:
 
 ```text
 "%s-%04d%02d%02d-%02d%02d%02d.dmp"
@@ -594,7 +598,7 @@ This produces a timestamped dump name:
 
 * `PREFIX-YYYYMMDD-HHMMSS.dmp`
 
-The exact value for `%s` depends on what the caller passes at the callsite. In the disassembly we saw a string `u"!analyze -v"`, which is suspicious as a prefix candidate and may be a decoy or debug artifact. Regardless, the timestamp structure is clear, it is designed to be unique per run.
+The exact value for `%s` depends on what the caller passes at the callsite. In the disassembly we saw a string `u"!analyze -v"`, which is suspicious as a prefix candidate and may be a decoy or debug artifact. Regardless, the timestamp structure is clear: it is designed to be unique per run.
 
 ## 7. C2 Configuration Storage and Parsing
 
@@ -609,7 +613,7 @@ Early in the parser we saw:
 140007411 e8 a6 24        CALL       _wcsrev
 ```
 
-This tells us that the string at `&DAT_14001f440` is stored in reversed. Static string extraction sees nonsense, while at runtime, `_wcsrev` flips it back just before parsing.
+This tells us that the string at `&DAT_14001f440` is stored in reverse. Static string extraction sees nonsense, while at runtime, `_wcsrev` flips it back just before parsing.
 
 Once reversed, the configuration appears as a delimiter-separated table:
 
@@ -620,7 +624,7 @@ Once reversed, the configuration appears as a delimiter-separated table:
 |dd:1|cl:1|fz:|bb:1.0|bz:2025.11.7|jp:0|bh:0|ll:0|dl:0|sh:0|kl:0|bd:
 ```
 
-We can see a structural detail here, the string begins with a leading `|`. That makes parsing simpler and safer because every entry is boundary-delimited, reducing the risk of accidental substring matches inside values. Even if the implementation searches for `p1:` rather than `|p1:`, this layout still reflects a deliberate “flat table” grammar.
+We can see a structural detail here: the string begins with a leading `|`. That makes parsing simpler and safer because every entry is boundary-delimited, reducing the risk of accidental substring matches inside values. Even if the implementation searches for `p1:` rather than `|p1:`, this layout still reflects a deliberate "flat table" grammar.
 
 At a glance, the grammar is intentionally minimal:
 * Entries are separated by `|`
@@ -629,7 +633,7 @@ At a glance, the grammar is intentionally minimal:
 
 The first cluster (`p1/o1/t1`, `p2/o2/t2`, `p3/o3/t3`) reads like a list of C2 endpoints with enable flags. The later flags (`dd`, `cl`, `jp`, `bh`, `ll`, `dl`, `sh`, `kl`, `bd`) behave like feature toggles, versioning markers, and behavior parameters.
 
-The intent here is clear, the implant wants a compact, easily replaceable config that can be parsed without heavy dependencies.
+The intent here is clear: the implant wants a compact, easily replaceable config that can be parsed without heavy dependencies.
 
 ### 7.2 Parsing Helper: Key Extractor
 
@@ -650,7 +654,7 @@ Once extracted, other code never has to parse the raw string again. It simply re
 
 ### 7.3 Boolean Toggles
 
-The toggle logic is consistent, if the character after the colon is `'1'` (`0x31`), set a corresponding global to `1`.
+The toggle logic is consistent: if the character after the colon is `'1'` (`0x31`), set a corresponding global to `1`.
 
 We saw this pattern for:
 
@@ -679,7 +683,7 @@ It first opens the `Console` key under `HKCU`:
 140007d81 ff 15 81        CALL       qword ptr [->ADVAPI32.DLL::RegOpenKeyExW]
 ```
 
-Then it queries the `HKCU\Console\IpDate` value. 
+Then it queries the `HKCU\Console\IpDate` value.
 
 ```c
 140007d8b 48 8b 8c        MOV        RCX,qword ptr [RSP + local_res18]
@@ -696,7 +700,7 @@ Importantly, it uses the common two-step query pattern:
 * Query with a null data pointer to retrieve the required size.
 * If the size passes a sanity check (in this case `> 10`), clear the config buffer and query again to fetch the actual bytes.
 
-```c  
+```c
 140007dbb 83 7c 24        CMP        dword ptr [RSP + local_res8],0xa
 140007dc0 0f 86 e3        JBE        LAB_1400080a9
 140007dc6 33 d2           XOR        EDX,EDX
@@ -719,7 +723,7 @@ We interpret this as a post-deployment control channel:
 * The implant can be “retasked” locally by updating a registry value.
 * The key path is intentionally boring-looking (“Console” settings) which helps it blend in compared to something obviously malicious.
 
-The end result is, configuration is effectively **baked-in but replaceable**. Static config provides defaults, registry override provides agility.
+The end result is that configuration is effectively **baked-in but replaceable**. Static config provides defaults, while the registry override provides agility.
 
 ## 8. Where Static Analysis Stops (and Part 2 Starts)
 
@@ -748,7 +752,7 @@ In Part 2 we’ll treat the C2 configuration as an active protocol, recover mess
 ## References
 
 [^1]: [MITRE ATT&CK T1547.001 - Registry Run Keys / Startup Folder](https://attack.mitre.org/techniques/T1547/001/)
-[^2]: [Donut Shellcode Generator: Beginners guide](https://www.hackercoolmagazine.com/donut-shellcode-generator-beginners-guide/)
+[^2]: [Donut Shellcode Generator: Beginner's Guide](https://www.hackercoolmagazine.com/donut-shellcode-generator-beginners-guide/)
 [^3]: [Exploring Process Environment Block](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/exploring-process-environment-block)
 [^4]: [Using `scdbg` to Analyze Shellcode](https://isc.sans.edu/diary/24058)
 [^5]: [ShowWindow Function (winuser.h)](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow)
