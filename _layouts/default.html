@@ -5,10 +5,16 @@
 
   <body>
 
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+      Theme
+    </button>
+
     {% include sidebar.html %}
 
-    <div class="content container">
-      {{ content }}
+    <div class="main">
+      <div class="content container">
+        {{ content }}
+      </div>
     </div>
 
   </body>

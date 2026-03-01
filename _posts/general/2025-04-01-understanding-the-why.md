@@ -1,49 +1,73 @@
 ---
 layout: post
-title: "Understanding the why"
+title: "Understanding the Why"
 date: 2025-04-01
-categories: malware-analysis
+categories:
+  - research-notes
+tags:
+  - research-notes
+  - malware-analysis
+  - reverse-engineering
+  - learning
 ---
 
-## **Why I Study Malware**
+Security gets sold as certainty: dashboards, metrics, "visibility." The work that keeps pulling me in is the opposite. It's the part where you do not get to assume the system is telling the truth, and you have to earn every claim by taking something apart.
 
-To start off, I do have interest in security in general. So far my journey in the field has been filled with lots of learning and discovery of very cool things, and I hope to use this blog to share some of those learning. BUt first, I'll start by explaining my main area of interest, which is Malware Analysis.
+Malware analysis sits right in that gap. It is a forced audit of reality: what the binary actually does, what the network trace actually contains, what the OS actually guarantees, and how quickly a neat theory collapses when a single assumption is wrong.
 
+I still remember the first time I opened a binary in Ghidra and stared at the decompiler like it was an alien language. What hooked me was not the tool. It was the feeling that there was a coherent story in there, and the only way to get it was to build the model yourself.
 
-I still remember the first time I opened a binary in Ghidra and stared at the decompiled output like I was deciphering an alien language. Something clicked — not in the code, but in me. It wasn’t just curiosity anymore. It was obsession. This dates back to my honours year in university!
+## Why I Study Malware
 
+I am interested in security broadly, but malware analysis is where my curiosity becomes mechanical. You do not get to hand-wave. You either explain an artifact or you do not.
 
-### **What Drew Me In**
+The part I enjoy most is the transition from vague suspicion to a crisp narrative:
 
-There’s a kind of poetry in malware, malicious code designed to deceive, evade, and adapt. I found myself drawn not to the destruction, but to the design. Malware tells a story, of how systems are built, and how they can be broken.
+* What is the stage layout?
+* Where is configuration stored, and how is it protected?
+* What does persistence actually change on disk/registry/service state?
+* What is the operator supposed to be able to control after deployment?
 
-I wanted to learn how the most complex threats operate, and more importantly, how to dissect them piece by piece. Like understanding what each ingredient does in a recipe.
+And if the answer is "I am not sure yet," I want to be able to say exactly what would remove the uncertainty.
 
+## What Drew Me In
 
-### **My Journey So Far**
+There is a kind of poetry in malware, but it is the poetry of constraints. Malware has to execute in hostile environments, operate under partial visibility, and keep functioning when defenders and sandboxes interfere.
 
-* I began with basic reversing exercises and gradually moved into analyzing real-world samples.
-* Set up a lab environment using REMnux, VirtualBox, and recently added a Raspberry Pi to experiment with bare-metal analysis and fuzzing.
-* I’ve been diving deep into static and dynamic analysis, binary protections, and techniques like symbolic execution.
-* I hope to build confidence in analysing APT-level malware with the goal of understanding how the most persistent and evasive threats operate.
+I am drawn less to the destruction and more to the design:
 
-### **What You’ll Find Here**
+* the weird tradeoffs (noise vs reliability vs stealth)
+* the tiny implementation mistakes that change everything
+* the subtle ways systems fail when their assumptions are stressed
 
-This blog is a space where I document my journey in security in general, but also my journey in Malware Analysis specifically. From deep technical breakdowns to personal reflections on the craft. You’ll find:
+Malware is a sharp lens for studying how software is built, and how it breaks.
 
-* Malware analysis write-ups
-* Notes on reversing techniques
-* Thoughts on tooling (like Frida, Ghidra, custom emulation)
-* And sometimes, raw reflections on learning and growth
+## How I Work (And What I Show)
 
-No fluff. Just clear, focused content — for learners, professionals, and curious minds alike.
+When I write a post here, I am not trying to produce a perfect tutorial. I am documenting investigation:
 
-### **The Why That Keeps Me Going**
+* the initial hypotheses from triage
+* how I proved or disproved them
+* where the evidence was solid vs where it was suggestive
+* the dead ends (when they're instructive)
 
-* Because the best way to understand something… is to break it.
-* Because we learn more by tearing apart what’s hidden, than accepting what’s shown.
-* Because I love this work, and if you do too, you’re in the right place.
+Some posts will be clean and conclusive. Some will be explicitly marked as work-in-progress. Either way, I want the reader to be able to track the chain of reasoning.
 
-### **Let’s Begin**
+## What You'll Find Here
 
-Thanks for being here. Let’s see how deep the rabbit hole goes.
+This blog is a long-form notebook. I am optimizing for slow reading and replayable understanding, not for engagement.
+
+You will find:
+
+* narrative-driven malware write-ups (static, dynamic, and sometimes protocol work)
+* reverse engineering notes (how I recognized patterns, how I named things, what I missed at first)
+* tooling experiments (small scripts, helpers, lab notes)
+* occasional reflective pieces on how security is practiced vs how it is marketed
+
+If a post is part of a longer investigation, it will be labeled as a series/part so you can follow it end-to-end.
+
+## The Why That Keeps Me Going
+
+I keep coming back to this work for a simple reason: the fastest way to understand a system is to watch it fail and then explain why it failed.
+
+If you like that kind of thinking, you are in the right place.

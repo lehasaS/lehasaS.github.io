@@ -4,9 +4,56 @@ layout: default
 
 <div class="post">
   <h1 class="post-title">{{ page.title }}</h1>
-  <span class="post-date">{{ page.date | date_to_string }}</span>
+  <div class="post-meta">
+    <span class="post-date">{{ page.date | date_to_string }}</span>
+    {% if page.wip %}
+      <span class="post-status">Work in progress</span>
+    {% endif %}
+
+    {% if page.series %}
+      <span class="post-series">
+        Series:
+        <a href="{{ '/series/' | relative_url }}#{{ page.series | slugify }}">{{ page.series }}</a>
+        {% if page.series_part %}
+          (Part {{ page.series_part }}{% if page.series_total %} of {{ page.series_total }}{% endif %})
+        {% endif %}
+      </span>
+    {% endif %}
+
+    {% if page.tags %}
+      <span class="post-tags">
+        Tags:
+        {% for tag in page.tags %}
+          <a class="tag" href="{{ '/tags/' | relative_url }}#{{ tag | slugify }}">{{ tag }}</a>{% unless forloop.last %}, {% endunless %}
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
   {{ content }}
 </div>
+
+{% if page.series %}
+  {% assign series_posts = site.posts | where: "series", page.series | sort: "series_part" %}
+  {% if series_posts.size > 1 %}
+    <div class="related">
+      <h2>Series: {{ page.series }}</h2>
+      <ul class="related-posts">
+        {% for post in series_posts %}
+          <li>
+            <h3>
+              {% if post.url == page.url %}
+                <strong>{{ post.title }}</strong>
+              {% else %}
+                <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+              {% endif %}
+              <small>{{ post.date | date_to_string }}</small>
+            </h3>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endif %}
 
 <div class="related">
   <h2>Related Posts</h2>
@@ -14,7 +61,7 @@ layout: default
     {% for post in site.related_posts limit:3 %}
       <li>
         <h3>
-          <a href="{{ post.url }}">
+          <a href="{{ post.url | relative_url }}">
             {{ post.title }}
             <small>{{ post.date | date_to_string }}</small>
           </a>

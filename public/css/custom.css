@@ -1,0 +1,650 @@
+/*
+ * Local overrides on top of Poole/Hyde.
+ * Keep this file last in the CSS chain.
+ */
+
+:root {
+  color-scheme: light;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --space-outer: 24px;
+  --space-2: 16px;
+  --space-1: 12px;
+  --radius: 16px;
+  --radius-sm: 12px;
+
+  /* Light theme tokens */
+  --bg: #f6f7f9;
+  --surface-1: #ffffff; /* content card */
+  --surface-2: #f0f2f5; /* sidebar + elevated controls */
+  --surface-3: #e9edf3; /* pills / subtle emphasis */
+
+  --text-high: rgba(0, 0, 0, 0.87);
+  --text-med: rgba(0, 0, 0, 0.6);
+  --text-low: rgba(0, 0, 0, 0.38);
+
+  --border: rgba(0, 0, 0, 0.12);
+  --divider: rgba(0, 0, 0, 0.12);
+
+  --accent: #0b5cab;
+  --accent-hover: #083f75;
+  --accent-surface-hover: rgba(11, 92, 171, 0.1);
+  --accent-surface-active: rgba(11, 92, 171, 0.16);
+  --focus-ring: rgba(11, 92, 171, 0.28);
+
+  --elev-1: 0 1px 0 rgba(0, 0, 0, 0.06), 0 12px 28px rgba(0, 0, 0, 0.08);
+  --elev-sidebar: 1px 0 0 rgba(0, 0, 0, 0.06), 12px 0 28px rgba(0, 0, 0, 0.08);
+
+  --table-stripe: rgba(0, 0, 0, 0.03);
+
+  /* Code surfaces + syntax (light) */
+  --code-surface: #0f172a; /* navy */
+  --code-fg: rgba(255, 255, 255, 0.87);
+  --code-border: rgba(0, 0, 0, 0.08);
+  --code-inline-bg: rgba(0, 0, 0, 0.06);
+  --code-inline-fg: #0b1220;
+
+  --syn-comment: rgba(255, 255, 255, 0.38);
+  --syn-keyword: #ea6962;
+  --syn-string: #a9b665;
+  --syn-number: #d3869b;
+  --syn-func: #d8a657;
+  --syn-type: #7daea3;
+  --syn-attr: #89b482;
+  --syn-tag: #7daea3;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Dark theme tokens (requested base background) */
+  --bg: #121212;
+  --surface-1: #1b1b1b;
+  --surface-2: #202020;
+  --surface-3: #262626;
+
+  --text-high: rgba(255, 255, 255, 0.87);
+  --text-med: rgba(255, 255, 255, 0.6);
+  --text-low: rgba(255, 255, 255, 0.38);
+
+  --border: rgba(255, 255, 255, 0.12);
+  --divider: rgba(255, 255, 255, 0.12);
+
+  --accent: #8ab4f8;
+  --accent-hover: #a7c7ff;
+  --accent-surface-hover: rgba(138, 180, 248, 0.12);
+  --accent-surface-active: rgba(138, 180, 248, 0.18);
+  --focus-ring: rgba(138, 180, 248, 0.35);
+
+  --elev-1: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 18px 40px rgba(0, 0, 0, 0.65);
+  --elev-sidebar: 1px 0 0 rgba(255, 255, 255, 0.06), 18px 0 40px rgba(0, 0, 0, 0.65);
+
+  --table-stripe: rgba(255, 255, 255, 0.03);
+
+  --code-surface: #1f1f1f;
+  --code-fg: rgba(255, 255, 255, 0.87);
+  --code-border: rgba(255, 255, 255, 0.12);
+  --code-inline-bg: rgba(255, 255, 255, 0.08);
+  --code-inline-fg: rgba(255, 255, 255, 0.87);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #121212;
+    --surface-1: #1b1b1b;
+    --surface-2: #202020;
+    --surface-3: #262626;
+
+    --text-high: rgba(255, 255, 255, 0.87);
+    --text-med: rgba(255, 255, 255, 0.6);
+    --text-low: rgba(255, 255, 255, 0.38);
+
+    --border: rgba(255, 255, 255, 0.12);
+    --divider: rgba(255, 255, 255, 0.12);
+
+    --accent: #8ab4f8;
+    --accent-hover: #a7c7ff;
+    --accent-surface-hover: rgba(138, 180, 248, 0.12);
+    --accent-surface-active: rgba(138, 180, 248, 0.18);
+    --focus-ring: rgba(138, 180, 248, 0.35);
+
+    --elev-1: 0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 18px 40px rgba(0, 0, 0, 0.65);
+    --elev-sidebar: 1px 0 0 rgba(255, 255, 255, 0.06),
+      18px 0 40px rgba(0, 0, 0, 0.65);
+
+    --table-stripe: rgba(255, 255, 255, 0.03);
+
+    --code-surface: #1f1f1f;
+    --code-fg: rgba(255, 255, 255, 0.87);
+    --code-border: rgba(255, 255, 255, 0.12);
+    --code-inline-bg: rgba(255, 255, 255, 0.08);
+    --code-inline-fg: rgba(255, 255, 255, 0.87);
+  }
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (min-width: 38em) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 58em) {
+  html {
+    font-size: 19px;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-high);
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover,
+a:focus {
+  color: var(--accent-hover);
+}
+
+strong {
+  color: var(--text-high);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-high);
+  letter-spacing: -0.01em;
+}
+
+/* Poole forces title links to a dark color; override for theme consistency. */
+.page-title,
+.post-title,
+.post-title a {
+  color: var(--text-high);
+}
+
+.post-title a {
+  color: inherit;
+}
+
+/* Layout: keep sidebar fixed; center content within the remaining space. */
+.main {
+  padding: var(--space-outer);
+}
+
+@media (min-width: 48em) {
+  .main {
+    margin-left: 18rem; /* Hyde sidebar width */
+  }
+}
+
+.content {
+  width: 100%;
+  max-width: clamp(74ch, 62vw, 120ch);
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--space-outer);
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-1);
+}
+
+/* Poole left-aligns images via `margin: 0 0 1rem;` (no auto centering). */
+.content img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Sidebar: structured sections with dividers. */
+.sidebar {
+  text-align: left;
+  padding: var(--space-outer);
+  background: var(--surface-2);
+  color: var(--text-med);
+  box-shadow: var(--elev-sidebar);
+  z-index: 10;
+}
+
+.sidebar a {
+  color: var(--text-high);
+}
+
+/* Stop Hyde from bottom-anchoring the sidebar content. */
+.sidebar-sticky {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 48em) {
+  .sidebar-sticky {
+    position: static;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    min-height: 100%;
+  }
+}
+
+.sidebar-footer {
+  margin-top: auto;
+}
+
+.sidebar-about {
+  text-align: center;
+}
+
+.sidebar-about .sidebar-title {
+  margin: 0;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-family: var(--font-sans);
+}
+
+.sidebar-title a {
+  color: var(--text-high);
+  text-decoration: none;
+}
+
+.sidebar-tagline {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  color: var(--text-med);
+}
+
+.sidebar-divider {
+  border: 0;
+  border-top: 1px solid var(--divider);
+  margin: var(--space-2) 0;
+}
+
+.sidebar-nav {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  border-radius: 12px;
+  color: var(--text-high);
+  background: var(--surface-3);
+  text-decoration: none;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.sidebar-nav-item:hover,
+.sidebar-nav-item:focus {
+  border-color: var(--accent);
+  background: var(--accent-surface-hover);
+  text-decoration: none;
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.sidebar-nav-item.active {
+  background: var(--accent-surface-active);
+  border-color: var(--accent);
+}
+
+.sidebar-nav-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--text-med);
+}
+
+.sidebar-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-low);
+}
+
+.sidebar-meta-item {
+  white-space: nowrap;
+}
+
+/* Post meta (tags/series/wip). */
+.post-meta {
+  margin-top: 0.35rem;
+  margin-bottom: 1.75rem;
+  color: var(--text-low);
+  font-size: 0.92rem;
+}
+
+.post-meta > span {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.post-date {
+  color: var(--text-low);
+}
+
+.tag {
+  display: inline-block;
+  margin: 0 0.35rem 0.35rem 0;
+  padding: 0.18rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--text-med);
+  background: transparent;
+}
+
+.tag:hover,
+.tag:focus {
+  text-decoration: none;
+  color: var(--text-high);
+  border-color: var(--accent);
+}
+
+.post-meta .post-status {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.18rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-med);
+}
+
+/* Index page: previews with consistent rhythm. */
+.posts .post {
+  margin-bottom: 0;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.posts .post:last-child {
+  border-bottom: 0;
+}
+
+.posts .post .post-date {
+  margin-bottom: 0.75rem;
+}
+
+.posts .post .post-tags {
+  margin-top: 0.85rem;
+}
+
+/* Pagination: avoid floats/negative margins. */
+.pagination {
+  overflow: visible;
+  margin: 2rem 0 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  color: var(--text-low);
+  font-family: var(--font-sans);
+}
+
+.pagination-item {
+  float: none;
+  width: auto;
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  padding: 0.9rem 1rem;
+}
+
+a.pagination-item:hover,
+a.pagination-item:focus {
+  background: var(--surface-3);
+  text-decoration: none;
+}
+
+a.pagination-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.pagination-item.newer {
+  text-align: left;
+}
+
+.pagination-item.older {
+  text-align: right;
+}
+
+/* Theme toggle (top-right on every page). */
+.theme-toggle {
+  position: fixed;
+  top: var(--space-outer);
+  right: var(--space-outer);
+  z-index: 1000;
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-high);
+  padding: 10px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: var(--elev-1);
+}
+
+.theme-toggle:hover {
+  cursor: pointer;
+}
+
+.theme-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--elev-1), 0 0 0 3px var(--focus-ring);
+}
+
+@media (max-width: 48em) {
+  .theme-toggle {
+    top: 16px;
+    right: 16px;
+  }
+}
+
+/* Inline code vs code blocks */
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+code {
+  color: var(--code-inline-fg);
+  background: var(--code-inline-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.18em 0.45em;
+  font-size: 0.9em;
+}
+
+pre {
+  margin: 0;
+  white-space: pre;
+  word-break: normal;
+  word-wrap: normal;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+pre code {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+div.highlighter-rouge,
+figure.highlight {
+  margin: 1.25rem 0;
+  background: var(--code-surface);
+  color: var(--code-fg);
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+div.highlighter-rouge .highlight,
+figure.highlight .highlight {
+  margin: 0;
+  background: transparent;
+}
+
+div.highlighter-rouge pre,
+figure.highlight pre {
+  padding: 16px 18px;
+}
+
+/* Syntax: gruvbox-material-ish on dark surfaces */
+.highlight {
+  color: var(--code-fg);
+}
+
+.highlight .c,
+.highlight .c1,
+.highlight .cm {
+  color: var(--syn-comment);
+}
+
+.highlight .k,
+.highlight .kc,
+.highlight .kd,
+.highlight .kn,
+.highlight .kp,
+.highlight .kr,
+.highlight .kt {
+  color: var(--syn-keyword);
+}
+
+.highlight .s,
+.highlight .s1,
+.highlight .s2,
+.highlight .sb,
+.highlight .sc,
+.highlight .sd,
+.highlight .se,
+.highlight .sh,
+.highlight .si,
+.highlight .sx {
+  color: var(--syn-string);
+}
+
+.highlight .m,
+.highlight .mi,
+.highlight .mf,
+.highlight .mh,
+.highlight .mo {
+  color: var(--syn-number);
+}
+
+.highlight .nf {
+  color: var(--syn-func);
+}
+
+.highlight .nc,
+.highlight .kt {
+  color: var(--syn-type);
+}
+
+.highlight .na {
+  color: var(--syn-attr);
+}
+
+.highlight .nb,
+.highlight .bp,
+.highlight .no,
+.highlight .nn {
+  color: var(--syn-attr);
+}
+
+.highlight .nv,
+.highlight .ni,
+.highlight .nl,
+.highlight .n,
+.highlight .nx {
+  color: var(--code-fg);
+}
+
+.highlight .nt {
+  color: var(--syn-tag);
+}
+
+.highlight .o,
+.highlight .p,
+.highlight .w {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Misc content surfaces */
+blockquote {
+  color: var(--text-med);
+  border-left-color: var(--divider);
+}
+
+.message {
+  color: var(--text-med);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+
+.related {
+  border-top-color: var(--divider);
+}
+
+.related-posts li small {
+  color: var(--text-low);
+}
+
+hr {
+  border-top-color: var(--divider);
+  border-bottom-color: transparent;
+}
+
+table,
+td,
+th {
+  border-color: var(--border);
+}
+
+tbody tr:nth-child(odd) td,
+tbody tr:nth-child(odd) th {
+  background-color: var(--table-stripe);
+}
